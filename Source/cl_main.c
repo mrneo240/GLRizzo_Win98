@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 cvar_t	cl_name = {"_cl_name", "player", true};
 cvar_t	cl_color = {"_cl_color", "0", true};
 
+cvar_t	cl_vibration = {"cl_vibration","1", true}; // Manoel Kasimier
 cvar_t	cl_shownet = {"cl_shownet","0"};	// can be 0, 1, or 2
 cvar_t	cl_nolerp = {"cl_nolerp","0"};
 
@@ -726,6 +727,7 @@ void CL_Init (void)
 //
 	Cvar_RegisterVariable (&cl_name);
 	Cvar_RegisterVariable (&cl_color);
+	Cvar_RegisterVariable (&cl_vibration); // Manoel Kasimier
 	Cvar_RegisterVariable (&cl_upspeed);
 	Cvar_RegisterVariable (&cl_forwardspeed);
 	Cvar_RegisterVariable (&cl_backspeed);

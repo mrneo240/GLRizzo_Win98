@@ -307,6 +307,7 @@ void CL_ParseServerInfo (void)
 
 // local state
 	cl_entities[0].model = cl.worldmodel = cl.model_precache[1];
+	vibration_update[0] = vibration_update[1] = false; // Manoel Kasimier
 	
 	R_NewMap ();
 
