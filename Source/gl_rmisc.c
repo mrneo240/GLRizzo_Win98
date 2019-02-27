@@ -428,13 +428,16 @@ For program optimization
 */
 void R_TimeRefresh_f (void)
 {
+	/*
+	@TODO: Figure out what this does, maybe the key
+	*/
 	int			i;
 	float		start, stop, time;
 	int			startangle;
 	vrect_t		vr;
 
-	glDrawBuffer  (GL_FRONT);
-	glFinish ();
+	//glDrawBuffer  (GL_FRONT);
+	//glFinish ();
 
 	start = Sys_FloatTime ();
 	for (i=0 ; i<128 ; i++)
@@ -443,13 +446,13 @@ void R_TimeRefresh_f (void)
 		R_RenderView ();
 	}
 
-	glFinish ();
+	//glFinish ();
 	stop = Sys_FloatTime ();
 	time = stop-start;
 	Con_Printf ("%f seconds (%f fps)\n", time, 128/time);
 
-	glDrawBuffer  (GL_BACK);
-	GL_EndRendering ();
+	//glDrawBuffer  (GL_BACK);
+	//GL_EndRendering ();
 }
 
 void D_FlushCaches (void)

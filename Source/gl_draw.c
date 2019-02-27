@@ -808,9 +808,11 @@ void Draw_BeginDisc (void)
 {
 	if (!draw_disc)
 		return;
+#ifndef _arch_dreamcast
 	glDrawBuffer  (GL_FRONT);
 	Draw_Pic (vid.width - 24, 0, draw_disc);
 	glDrawBuffer  (GL_BACK);
+#endif
 }
 
 

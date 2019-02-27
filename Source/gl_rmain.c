@@ -1114,7 +1114,7 @@ void R_RenderView (void)
 
 	if (r_speeds.value)
 	{
-		glFinish ();
+		//glFinish ();
 		time1 = Sys_FloatTime ();
 		c_brush_polys = 0;
 		c_alias_polys = 0;
@@ -1122,8 +1122,9 @@ void R_RenderView (void)
 
 	mirror = false;
 
-	if (gl_finish.value)
+	/*if (gl_finish.value)
 		glFinish ();
+	*/
 
 	R_Clear ();
 

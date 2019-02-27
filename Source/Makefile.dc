@@ -118,7 +118,8 @@ GLQUAKE_OBJS= \
 GLDC_OBJS=$(BUILDDIR)/glquake/vid_dcgl.o \
 			$(BUILDDIR)/glquake/sys_dc.o \
 			$(BUILDDIR)/glquake/net_dc.o \
-			$(BUILDDIR)/glquake/dc_vibe.o
+			$(BUILDDIR)/glquake/dc_vibe.o \
+			$(BUILDDIR)/glquake/in_dc.o 
 
 $(BUILDDIR)/bin/glquake : $(GLQUAKE_OBJS) $(GLDC_OBJS)
 	$(CC) $(CFLAGS) $(KOS_CFLAGS) $(KOS_LDFLAGS) -o $@ $(GLQUAKE_OBJS) $(GLDC_OBJS) $(SVGALDFLAGS) $(LDFLAGS) $(GLLDFLAGS) $(KOS_START) $(KOS_LIBS)
@@ -142,6 +143,9 @@ $(BUILDDIR)/glquake/cd_null.o :  $(MOUNT_DIR)/cd_null.c
 	$(DO_GL_CC)
 
 $(BUILDDIR)/glquake/snd_null.o :  $(MOUNT_DIR)/snd_null.c
+	$(DO_GL_CC)
+
+$(BUILDDIR)/glquake/in_dc.o :  $(MOUNT_DIR)/s_dc/src/in_dc.c
 	$(DO_GL_CC)
 ###
 # End
