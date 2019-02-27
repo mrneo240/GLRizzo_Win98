@@ -717,7 +717,7 @@ void R_DrawParticles (void)
 			scale = 1;
 		else
 			scale = 1 + scale * 0.004;
-		glColor3ubv ((byte *)&d_8to24table[(int)p->color]);
+		glColor4ub ((byte *)(&d_8to24table[(int)p->color])[0],(byte *)(&d_8to24table[(int)p->color])[1],(byte *)(&d_8to24table[(int)p->color])[2],0xff);
 		glTexCoord2f (0,0);
 		glVertex3fv (p->org);
 		glTexCoord2f (1,0);
