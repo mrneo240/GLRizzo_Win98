@@ -333,3 +333,9 @@ extern	cvar_t	chase_active;
 void Chase_Init (void);
 void Chase_Reset (void);
 void Chase_Update (void);
+
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  start
+extern	double	host_cpu_frametime;
+extern	double	host_org_frametime;
+extern	cvar_t	host_timescale;
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  end

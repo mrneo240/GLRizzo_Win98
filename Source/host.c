@@ -33,6 +33,13 @@ Memory is cleared / released when a server or client begins, not when they end.
 
 */
 
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  start
+double	host_cpu_frametime;
+double	host_org_frametime;
+
+cvar_t	host_timescale = {"host_timescale", "1"};
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  end
+
 quakeparms_t host_parms;
 
 qboolean	host_initialized;		// true if into command execution
@@ -505,18 +512,33 @@ qboolean Host_FilterTime (float time)
 	if (!cls.timedemo && realtime - oldrealtime < 1.0/72.0)
 		return false;		// framerate is too high
 
-	host_frametime = realtime - oldrealtime;
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  start
+//	host_frametime = realtime - oldrealtime;
+	host_org_frametime = host_cpu_frametime = realtime - oldrealtime;
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  end
 	oldrealtime = realtime;
 
 	if (host_framerate.value > 0)
-		host_frametime = host_framerate.value;
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  start
+//		host_frametime = host_framerate.value;
+		host_org_frametime = host_framerate.value;
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  end
 	else
 	{	// don't allow really long or short frames
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  start
+/*
 		if (host_frametime > 0.1)
 			host_frametime = 0.1;
 		if (host_frametime < 0.001)
 			host_frametime = 0.001;
+*/
+		if (host_org_frametime > 0.1)
+			host_org_frametime = 0.1;
+		if (host_org_frametime < 0.001)
+			host_org_frametime = 0.001;
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  end
 	}
+	host_frametime = host_org_frametime * host_timescale.value;	// 2001-10-20 TIMESCALE extension by Tomaz/Maddes
 	
 	return true;
 }
@@ -601,6 +623,13 @@ void Host_ServerFrame (void)
 {
 // run the world state	
 	pr_global_struct->frametime = host_frametime;
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  start
+	if (pr_global_cpu_frametime)
+		G_FLOAT(pr_global_cpu_frametime->ofs) = host_cpu_frametime;
+
+	if (pr_global_org_frametime)
+		G_FLOAT(pr_global_org_frametime->ofs) = host_org_frametime;
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  end
 
 // set the time and clear the general datagram
 	SV_ClearDatagram ();

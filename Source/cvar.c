@@ -177,6 +177,27 @@ void Cvar_RegisterVariable (cvar_t *variable)
 	cvar_vars = variable;
 }
 
+//Manoel Kasimier & Heffo - Cvar Callback Function - begin
+void Cvar_RegisterVariableWithCallback (cvar_t *variable, void *function)
+{
+// first check to see if it has allready been defined
+	if (Cvar_FindVar (variable->name))
+	{
+		Con_Printf ("Can't register variable %s, allready defined\n", variable->name);
+		return;
+	}
+	
+// check for overlap with a command
+	if (Cmd_Exists (variable->name))
+	{
+		Con_Printf ("Cvar_RegisterVariable: %s is a command\n", variable->name);
+		return;
+	}
+	Cvar_RegisterVariable (variable);
+	variable->Cvar_Changed = function;
+}
+//Manoel Kasimier & Heffo - Cvar Callback Function - end
+
 /*
 ============
 Cvar_Command

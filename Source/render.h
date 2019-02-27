@@ -112,6 +112,7 @@ extern vec3_t	r_origin, vpn, vright, vup;
 
 extern	struct texture_s	*r_notexture_mip;
 
+float fovscale; // Manoel Kasimier - FOV-based scaling
 
 void R_Init (void);
 void R_InitTextures (void);

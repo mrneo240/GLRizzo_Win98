@@ -61,8 +61,10 @@ typedef struct cvar_s
 	qboolean server;		// notifies players when changed
 	float	value;
 	struct cvar_s *next;
+	void (*Cvar_Changed) (void); //Heffo - Cvar Callback Function
 } cvar_t;
 
+void 	Cvar_RegisterVariableWithCallback (cvar_t *variable, void *function); //Heffo - Cvar Callback Function // Manoel Kasimier - edited
 void 	Cvar_RegisterVariable (cvar_t *variable);
 // registers a cvar that allready has the name, string, and optionally the
 // archive elements set.

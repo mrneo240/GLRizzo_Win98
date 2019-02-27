@@ -60,6 +60,11 @@ typedef struct {
 
 static gefv_cache	gefvCache[GEFV_CACHESIZE] = {{NULL, ""}, {NULL, ""}};
 
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  start
+ddef_t	*pr_global_cpu_frametime;
+ddef_t	*pr_global_org_frametime;
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  end
+
 /*
 =================
 ED_ClearEdict
@@ -985,6 +990,7 @@ PR_LoadProgs
 void PR_LoadProgs (void)
 {
 	int		i;
+	etype_t	type;	// 2001-10-20 TIMESCALE extension by Tomaz/Maddes
 
 // flush the non-C variable lookup cache
 	for (i=0 ; i<GEFV_CACHESIZE ; i++)
@@ -1057,6 +1063,30 @@ void PR_LoadProgs (void)
 
 	for (i=0 ; i<progs->numglobals ; i++)
 		((int *)pr_globals)[i] = LittleLong (((int *)pr_globals)[i]);
+
+	// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  start
+	pr_global_cpu_frametime = ED_FindGlobal ("cpu_frametime");
+	if (pr_global_cpu_frametime)
+	{
+		type = pr_global_cpu_frametime->type;
+		type &= ~DEF_SAVEGLOBAL;
+		if (type != ev_float)
+		{
+			pr_global_cpu_frametime = NULL;
+		}
+	}
+
+	pr_global_org_frametime = ED_FindGlobal ("org_frametime");
+	if (pr_global_org_frametime)
+	{
+		type = pr_global_org_frametime->type;
+		type &= ~DEF_SAVEGLOBAL;
+		if (type != ev_float)
+		{
+			pr_global_org_frametime = NULL;
+		}
+	}
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  end
 }
 
 
