@@ -591,6 +591,7 @@ SCR_ScreenShot_f
 */  
 void SCR_ScreenShot_f (void) 
 {
+#ifndef _arch_dreamcast
 	byte		*buffer;
 	char		pcxname[80]; 
 	char		checkname[MAX_OSPATH];
@@ -638,6 +639,7 @@ void SCR_ScreenShot_f (void)
 
 	free (buffer);
 	Con_Printf ("Wrote %s\n", pcxname);
+#endif
 } 
 
 

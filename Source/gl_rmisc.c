@@ -105,6 +105,9 @@ Grab six views for environment mapping tests
 */
 void R_Envmap_f (void)
 {
+#ifdef _arch_dreamcast
+return;
+#else
 	byte	buffer[256*256*4];
 	char	name[1024];
 
@@ -161,6 +164,7 @@ void R_Envmap_f (void)
 	glDrawBuffer  (GL_BACK);
 	glReadBuffer  (GL_BACK);
 	GL_EndRendering ();
+#endif
 }
 
 /*
