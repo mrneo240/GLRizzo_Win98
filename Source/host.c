@@ -54,12 +54,16 @@ int			host_hunklevel;
 
 int			minimum_memory;
 
+int			fps_count;	// 2001-11-31 FPS display by QuakeForge/Muff
+
 client_t	*host_client;			// current client
 
 jmp_buf 	host_abortserver;
 
 byte		*host_basepal;
 byte		*host_colormap;
+
+cvar_t	r_skyalpha = {"r_skyalpha","1"}; //0.6 Manoel Kasimier - translucent sky
 
 cvar_t	host_framerate = {"host_framerate","0"};	// set for slow motion
 cvar_t	host_speeds = {"host_speeds","0"};			// set for running times
@@ -77,7 +81,7 @@ cvar_t	noexit = {"noexit","0",false,true};
 #ifdef QUAKE2
 cvar_t	developer = {"developer","1"};	// should be 0 for release!
 #else
-cvar_t	developer = {"developer","0"};
+cvar_t	developer = {"developer","1"};
 #endif
 
 cvar_t	skill = {"skill","1"};						// 0 - 3
@@ -198,7 +202,7 @@ void	Host_FindMaxClients (void)
 
 	svs.maxclientslimit = svs.maxclients;
 	if (svs.maxclientslimit < 4)
-		svs.maxclientslimit = 4;
+		svs.maxclientslimit = 16; // edited
 	svs.clients = Hunk_AllocName (svs.maxclientslimit*sizeof(client_t), "clients");
 
 	if (svs.maxclients > 1)
@@ -207,7 +211,27 @@ void	Host_FindMaxClients (void)
 		Cvar_SetValue ("deathmatch", 0.0);
 }
 
-
+// Manoel Kasimier - Deathmatch/Coop not at the same time - begin
+void Host_CheckDeathmatchValue (void)
+{
+	if (deathmatch.value && coop.value)
+		Cvar_SetValue("coop", 0);
+}
+void Host_CheckCoopValue (void)
+{
+	if (deathmatch.value && coop.value)
+		Cvar_SetValue("deathmatch", 0);
+}
+// Manoel Kasimier - Deathmatch/Coop not at the same time - end
+// Manoel Kasimier - TIMESCALE extension - begin
+void Host_CheckTimescaleValue (void)
+{
+	if (host_timescale.value < 0.0)
+		Cvar_SetValue("host_timescale", 0.0);
+	else if (host_timescale.value > 10.0)
+		Cvar_SetValue("host_timescale", 10.0);
+}
+// Manoel Kasimier - TIMESCALE extension - end
 /*
 =======================
 Host_InitLocal
@@ -216,6 +240,11 @@ Host_InitLocal
 void Host_InitLocal (void)
 {
 	Host_InitCommands ();
+	
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  start
+	Cvar_RegisterVariableWithCallback (&host_timescale, Host_CheckTimescaleValue); // Manoel Kasimier
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  end
+	Cvar_RegisterVariable (&r_skyalpha); // Manoel Kasimier - translucent sky
 	
 	Cvar_RegisterVariable (&host_framerate);
 	Cvar_RegisterVariable (&host_speeds);
@@ -230,8 +259,8 @@ void Host_InitLocal (void)
 	Cvar_RegisterVariable (&noexit);
 	Cvar_RegisterVariable (&skill);
 	Cvar_RegisterVariable (&developer);
-	Cvar_RegisterVariable (&deathmatch);
-	Cvar_RegisterVariable (&coop);
+	Cvar_RegisterVariableWithCallback (&deathmatch, Host_CheckDeathmatchValue); // Manoel Kasimier - Deathmatch/Coop not at the same time - edited
+	Cvar_RegisterVariableWithCallback (&coop, Host_CheckCoopValue); // Manoel Kasimier - Deathmatch/Coop not at the same time - edited
 
 	Cvar_RegisterVariable (&pausable);
 
@@ -256,12 +285,19 @@ void Host_WriteConfiguration (void)
 
 // dedicated servers initialize the host but don't parse and set the
 // config.cfg cvars
-	if (host_initialized & !isDedicated)
+	if (host_initialized && !isDedicated) // fixed
 	{
-		f = fopen (va("%s/config.cfg",com_gamedir), "w");
+#ifndef _arch_dreamcast // Manoel Kasimier - VMU saves
+	//	f = fopen (va("%s/config.cfg",com_gamedir), "wb"); // Manoel Kasimier - reduced config file - edited
+		f = fopen (va("%s/rizzo.cfg",com_gamedir), "wb"); // Manoel Kasimier - config.cfg replacement - edited
+// Manoel Kasimier - VMU saves - begin
+#else
+		f = fopen ("/ram/rizzo.cfg", "wb");
+#endif
+// Manoel Kasimier - VMU saves - end
 		if (!f)
 		{
-			Con_Printf ("Couldn't write config.cfg.\n");
+			Con_Printf ("Couldn't write rizzo.cfg.\n"); // Manoel Kasimier - config.cfg replacement - edited
 			return;
 		}
 		
@@ -269,6 +305,18 @@ void Host_WriteConfiguration (void)
 		Cvar_WriteVariables (f);
 
 		fclose (f);
+// Manoel Kasimier - VMU saves - begin
+#ifdef _arch_dreamcast
+/*@Todo: VMu Saving*/
+	/*{
+	extern cvar_t savename;
+	char filename[13], description[33];
+	sprintf(filename, "%s.CFG", savename.string);
+	sprintf(description, "%-32s", cl_name.string);
+	VMU_Save ("/ram/rizzo.cfg", filename, "Rizzo Island config ", description);
+	}*/
+#endif
+// Manoel Kasimier - VMU saves - end
 	}
 }
 
@@ -577,13 +625,26 @@ void _Host_ServerFrame (void)
 {
 // run the world state	
 	pr_global_struct->frametime = host_frametime;
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  start
+	if (pr_global_cpu_frametime)
+		G_FLOAT(pr_global_cpu_frametime->ofs) = host_cpu_frametime;
+
+	if (pr_global_org_frametime)
+		G_FLOAT(pr_global_org_frametime->ofs) = host_org_frametime;
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  end
 
 // read client messages
 	SV_RunClients ();
 	
 // move things around and think
 // always pause in single player if in console or menus
+// Manoel Kasimier - begin
+#ifdef _arch_dreamcast
+	if (!sv.paused && key_dest == key_game)
+#else
+// Manoel Kasimier - end
 	if (!sv.paused && (svs.maxclients > 1 || key_dest == key_game) )
+#endif // Manoel Kasimier
 		SV_Physics ();
 }
 
@@ -594,6 +655,13 @@ void Host_ServerFrame (void)
 
 // run the world state	
 	pr_global_struct->frametime = host_frametime;
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  start
+	if (pr_global_cpu_frametime)
+		G_FLOAT(pr_global_cpu_frametime->ofs) = host_cpu_frametime;
+
+	if (pr_global_org_frametime)
+		G_FLOAT(pr_global_org_frametime->ofs) = host_org_frametime;
+// 2001-10-20 TIMESCALE extension by Tomaz/Maddes  end
 
 // set the time and clear the general datagram
 	SV_ClearDatagram ();
@@ -642,7 +710,13 @@ void Host_ServerFrame (void)
 	
 // move things around and think
 // always pause in single player if in console or menus
+// Manoel Kasimier - begin
+#ifdef _arch_dreamcast
+	if (!sv.paused && key_dest == key_game)
+#else
+// Manoel Kasimier - end
 	if (!sv.paused && (svs.maxclients > 1 || key_dest == key_game) )
+#endif // Manoel Kasimier
 		SV_Physics ();
 
 // send all messages to the clients
@@ -753,6 +827,7 @@ void _Host_Frame (float time)
 	}
 	
 	host_framecount++;
+	fps_count++;	// 2001-11-31 FPS display by QuakeForge/Muff
 }
 
 void Host_Frame (float time)
@@ -861,8 +936,10 @@ void Host_InitVCR (quakeparms_t *parms)
 Host_Init
 ====================
 */
+pixel_t colormap_cel[256*64]; // Manoel Kasimier - EF_CELSHADING
 void Host_Init (quakeparms_t *parms)
 {
+	loadedfile_t	*fileinfo;	// 2001-09-12 Returning information about loaded file by Maddes
 
 	if (standard_quake)
 		minimum_memory = MINIMUM_MEMORY;
@@ -883,6 +960,7 @@ void Host_Init (quakeparms_t *parms)
 	Memory_Init (parms->membase, parms->memsize);
 	Cbuf_Init ();
 	Cmd_Init ();	
+	Con_Init ();	
 	V_Init ();
 	Chase_Init ();
 	Host_InitVCR (parms);
@@ -890,27 +968,62 @@ void Host_Init (quakeparms_t *parms)
 	Host_InitLocal ();
 	W_LoadWadFile ("gfx.wad");
 	Key_Init ();
-	Con_Init ();	
 	M_Init ();	
 	PR_Init ();
 	Mod_Init ();
 	NET_Init ();
 	SV_Init ();
 
-	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
-	Con_Printf ("%4.1f megabyte heap\n",parms->memsize/ (1024*1024.0));
+	Con_DPrintf ("Exe: "__TIME__" "__DATE__"\n"); // edited
+	Con_DPrintf ("%4.1f megabyte heap\n",parms->memsize/ (1024*1024.0)); // edited
 	
 	R_InitTextures ();		// needed even for dedicated servers
  
 	if (cls.state != ca_dedicated)
 	{
+// 2001-09-12 Returning information about loaded file by Maddes  start
+/*
 		host_basepal = (byte *)COM_LoadHunkFile ("gfx/palette.lmp");
 		if (!host_basepal)
+*/
+		fileinfo = COM_LoadHunkFile ("gfx/palette.lmp");
+		if (!fileinfo)
+// 2001-09-12 Returning information about loaded file by Maddes  end
 			Sys_Error ("Couldn't load gfx/palette.lmp");
+		host_basepal = fileinfo->data;	// 2001-09-12 Returning information about loaded file by Maddes
+// 2001-09-12 Returning information about loaded file by Maddes  start
+/*
 		host_colormap = (byte *)COM_LoadHunkFile ("gfx/colormap.lmp");
 		if (!host_colormap)
+*/
+		fileinfo = COM_LoadHunkFile ("gfx/colormap.lmp");
+		if (!fileinfo)
+// 2001-09-12 Returning information about loaded file by Maddes  end
 			Sys_Error ("Couldn't load gfx/colormap.lmp");
+		host_colormap = fileinfo->data;	// 2001-09-12 Returning information about loaded file by Maddes
+		// Manoel Kasimier - EF_CELSHADING - begin
+		{
+			int i;
+			for (i=0; i<64; i++)
+				Q_memcpy(colormap_cel+i*256, host_colormap+(i-(i%16))*256, 256); // 4 shades
+		}
+		// Manoel Kasimier - EF_CELSHADING - end
 
+		// Manoel Kasimier - transparencies - begin
+	//	alphamap = (byte *)COM_LoadHunkFile ("gfx/alphamap.lmp");
+	//	additivemap = (byte *)COM_LoadHunkFile ("gfx/addmap.lmp");
+		if ((fileinfo = COM_LoadHunkFile ("gfx/alphamap.lmp")))
+			alphamap = fileinfo->data;
+		else
+			Con_Printf(" ");
+		if ((fileinfo = COM_LoadHunkFile ("gfx/addmap.lmp")))
+			additivemap = fileinfo->data;
+		else
+			Con_Printf(" ");
+		if (!alphamap || !additivemap) Con_Printf(" ");
+		// Manoel Kasimier - transparencies - end
+
+#ifndef _arch_dreamcast // Manoel Kasimier
 #ifndef _WIN32 // on non win32, mouse comes before video for security reasons
 		IN_Init ();
 #endif
@@ -937,16 +1050,28 @@ void Host_Init (quakeparms_t *parms)
 #ifdef _WIN32 // on non win32, mouse comes before video for security reasons
 		IN_Init ();
 #endif
+#else // BlackAura - begin
+		IN_Init ();
+		VID_Init (host_basepal);
+
+		Draw_Init ();
+		SCR_Init ();
+		R_Init ();
+		CDAudio_Init ();
+		S_Init ();
+		Sbar_Init ();
+		CL_Init ();
+#endif // BlackAura - end
 	}
 
-	Cbuf_InsertText ("exec quake.rc\n");
+	Con_DPrintf ("\n"); // Manoel Kasimier
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();
 
 	host_initialized = true;
 	
-	Sys_Printf ("========Quake Initialized=========\n");	
+	Sys_Printf ("========Rizzo Initialized=========\n");	
 }
 
 
@@ -972,7 +1097,9 @@ void Host_Shutdown(void)
 // keep Con_Printf from trying to update the screen
 	scr_disabled_for_loading = true;
 
+#ifndef _arch_dreamcast // Manoel Kasimier - VMU saves
 	Host_WriteConfiguration (); 
+#endif // Manoel Kasimier - VMU saves
 
 	CDAudio_Shutdown ();
 	NET_Shutdown ();

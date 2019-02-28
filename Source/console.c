@@ -399,6 +399,7 @@ void Con_Printf (char *fmt, ...)
 
 // write it to the scrollable buffer
 	Con_Print (msg);
+	Sys_Printf ("%s\n", msg);
 	
 // update the screen if the console is displayed
 	if (cls.signon != SIGNONS && !scr_disabled_for_loading )

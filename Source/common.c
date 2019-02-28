@@ -36,7 +36,7 @@ qboolean        com_modified;   // set true if using non-id files
 
 qboolean		proghack;
 
-int             static_registered = 1;  // only for startup check, then set
+//int             static_registered = 1;  // only for startup check, then set // Manoel Kasimier - removing pop.lmp check - removed
 
 qboolean		msg_suppress_1 = 0;
 
@@ -55,6 +55,7 @@ char	com_cmdline[CMDLINE_LENGTH];
 
 qboolean		standard_quake = true, rogue, hipnotic;
 
+/* // Manoel Kasimier - removing pop.lmp check - removed - begin
 // this graphic needs to be in the pak file to use registered features
 unsigned short pop[] =
 {
@@ -75,6 +76,7 @@ unsigned short pop[] =
 ,0x0000,0x0000,0x0000,0x0000,0x6500,0x0000,0x0000,0x0000
 ,0x0000,0x0000,0x0000,0x0000,0x6400,0x0000,0x0000,0x0000
 };
+*/ // Manoel Kasimier - removing pop.lmp check - removed - end
 
 /*
 
@@ -286,7 +288,19 @@ int Q_strncasecmp (char *s1, char *s2, int n)
 
 int Q_strcasecmp (char *s1, char *s2)
 {
-	return Q_strncasecmp (s1, s2, 99999);
+// 2001-10-25 Q_strcasecmp fix by Maddes  start
+//	return Q_strncasecmp (s1, s2, 99999);
+	int	len1, len2;
+
+	len1 = strlen(s1);
+	len2 = strlen(s2);
+	if (len2 > len1)
+	{
+		len1 = len2;
+	}
+
+	return Q_strncasecmp (s1, s2, len1);
+// 2001-10-25 Q_strcasecmp fix by Maddes  end
 }
 
 int Q_atoi (char *str)
@@ -355,6 +369,12 @@ float Q_atof (char *str)
 	int             c;
 	int             decimal, total;
 	
+// 1999-12-27 ATOF problems with leading spaces fix by Maddes  start
+	while ((*str) && (*str<=' '))
+	{
+		str++;
+	}
+// 1999-12-27 ATOF problems with leading spaces fix by Maddes  end
 	if (*str == '-')
 	{
 		sign = -1;
@@ -588,7 +608,7 @@ void MSG_WriteCoord (sizebuf_t *sb, float f)
 
 void MSG_WriteAngle (sizebuf_t *sb, float f)
 {
-	MSG_WriteByte (sb, ((int)f*256/360) & 255);
+	MSG_WriteByte (sb, (int)(f*256.0/360.0) & 255); // Manoel Kasimier - improved 8-bit angles - edited
 }
 
 //
@@ -721,7 +741,7 @@ float MSG_ReadCoord (void)
 
 float MSG_ReadAngle (void)
 {
-	return MSG_ReadChar() * (360.0/256);
+	return MSG_ReadChar() * (360.0/256.0);
 }
 
 
@@ -1015,6 +1035,7 @@ being registered.
 void COM_CheckRegistered (void)
 {
 	int             h;
+	/* // Manoel Kasimier - removing pop.lmp check - removed - begin
 	unsigned short  check[128];
 	int                     i;
 
@@ -1038,11 +1059,25 @@ void COM_CheckRegistered (void)
 	for (i=0 ; i<128 ; i++)
 		if (pop[i] != (unsigned short)BigShort (check[i]))
 			Sys_Error ("Corrupted data file.");
+	*/ // Manoel Kasimier - removing pop.lmp check - removed - end
 	
 	Cvar_Set ("cmdline", com_cmdline);
+	/* // Manoel Kasimier - removing pop.lmp check - removed - begin
 	Cvar_Set ("registered", "1");
 	static_registered = 1;
 	Con_Printf ("Playing registered version.\n");
+	*/ // Manoel Kasimier - removing pop.lmp check - removed - end
+	// Manoel Kasimier - removing pop.lmp check - begin
+	COM_OpenFile("gfx/pop.lmp", &h, NULL); // edited
+	if (h == -1)
+		Con_Printf ("Playing shareware version.\n");
+	else
+	{
+		COM_CloseFile (h);
+		Cvar_Set ("registered", "1");
+		Con_DPrintf ("Playing registered version.\n");
+	}
+	// Manoel Kasimier - removing pop.lmp check - end
 }
 
 
@@ -1204,7 +1239,7 @@ int     com_filesize;
 //
 // in memory
 //
-
+/* // 2001-09-12 Returning from which searchpath a file was loaded by Maddes
 typedef struct
 {
 	char    name[MAX_QPATH];
@@ -1236,17 +1271,17 @@ typedef struct
 } dpackheader_t;
 
 #define MAX_FILES_IN_PACK       2048
-
+*/ // 2001-09-12 Returning from which searchpath a file was loaded by Maddes
 char    com_cachedir[MAX_OSPATH];
 char    com_gamedir[MAX_OSPATH];
-
+/* // 2001-09-12 Returning from which searchpath a file was loaded by Maddes
 typedef struct searchpath_s
 {
 	char    filename[MAX_OSPATH];
 	pack_t  *pack;          // only one of filename / pack will be used
 	struct searchpath_s *next;
 } searchpath_t;
-
+*/ // 2001-09-12 Returning from which searchpath a file was loaded by Maddes
 searchpath_t    *com_searchpaths;
 
 /*
@@ -1362,7 +1397,7 @@ Finds the file in the search path.
 Sets com_filesize and one of handle or file
 ===========
 */
-int COM_FindFile (char *filename, int *handle, FILE **file)
+int COM_FindFile (char *filename, int *handle, FILE **file, searchpath_t **foundpath)	// 2001-09-12 Returning from which searchpath a file was loaded by Maddes
 {
 	searchpath_t    *search;
 	char            netpath[MAX_OSPATH];
@@ -1394,7 +1429,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 		// look through all the pak file elements
 			pak = search->pack;
 			for (i=0 ; i<pak->numfiles ; i++)
-				if (!strcmp (pak->files[i].name, filename))
+				if (!Q_strcasecmp (pak->files[i].name, filename)) // Manoel Kasimier - fixed
 				{       // found it!
 					Sys_Printf ("PackFile: %s : %s\n",pak->filename, filename);
 					if (handle)
@@ -1408,6 +1443,12 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 						if (*file)
 							fseek (*file, pak->files[i].filepos, SEEK_SET);
 					}
+// 2001-09-12 Returning from which searchpath a file was loaded by Maddes  start
+					if ( foundpath )
+					{
+						*foundpath = search;
+					}
+// 2001-09-12 Returning from which searchpath a file was loaded by Maddes  end
 					com_filesize = pak->files[i].filelen;
 					return com_filesize;
 				}
@@ -1415,11 +1456,13 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 		else
 		{               
 	// check a file in the directory tree
+			/* // Manoel Kasimier - removing pop.lmp check - removed - begin
 			if (!static_registered)
 			{       // if not a registered version, don't ever go beyond base
 				if ( strchr (filename, '/') || strchr (filename,'\\'))
 					continue;
 			}
+			*/ // Manoel Kasimier - removing pop.lmp check - removed - end
 			
 			sprintf (netpath, "%s/%s",search->filename, filename);
 			
@@ -1457,6 +1500,12 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 				Sys_FileClose (i);
 				*file = fopen (netpath, "rb");
 			}
+// 2001-09-12 Returning from which searchpath a file was loaded by Maddes  start
+			if ( foundpath )
+			{
+				*foundpath = search;
+			}
+// 2001-09-12 Returning from which searchpath a file was loaded by Maddes  end
 			return com_filesize;
 		}
 		
@@ -1482,9 +1531,9 @@ returns a handle and a length
 it may actually be inside a pak file
 ===========
 */
-int COM_OpenFile (char *filename, int *handle)
+int COM_OpenFile (char *filename, int *handle, searchpath_t **foundpath)	// 2001-09-12 Returning from which searchpath a file was loaded by Maddes
 {
-	return COM_FindFile (filename, handle, NULL);
+	return COM_FindFile (filename, handle, NULL, foundpath);	// 2001-09-12 Returning from which searchpath a file was loaded by Maddes
 }
 
 /*
@@ -1495,9 +1544,9 @@ If the requested file is inside a packfile, a new FILE * will be opened
 into the file.
 ===========
 */
-int COM_FOpenFile (char *filename, FILE **file)
+int COM_FOpenFile (char *filename, FILE **file, searchpath_t **foundpath)	// 2001-09-12 Returning from which searchpath a file was loaded by Maddes
 {
-	return COM_FindFile (filename, NULL, file);
+	return COM_FindFile (filename, NULL, file, foundpath);	// 2001-09-12 Returning from which searchpath a file was loaded by Maddes
 }
 
 /*
@@ -1530,35 +1579,67 @@ Allways appends a 0 byte.
 cache_user_t *loadcache;
 byte    *loadbuf;
 int             loadsize;
-byte *COM_LoadFile (char *path, int usehunk)
+// 2001-09-12 Returning information about loaded file by Maddes  start
+//byte *COM_LoadFile (char *path, int usehunk)
+loadedfile_t *COM_LoadFile (char *path, int usehunk)
+// 2001-09-12 Returning information about loaded file by Maddes  end
 {
 	int             h;
 	byte    *buf;
 	char    base[32];
 	int             len;
+// 2001-09-12 Returning information about loaded file by Maddes  start
+	int		bufsize;
+	loadedfile_t	*fileinfo;
+	searchpath_t	*foundpath;	// 2001-09-12 Returning from which searchpath a file was loaded by Maddes
+// 2001-09-12 Returning information about loaded file by Maddes  end
 
 	buf = NULL;     // quiet compiler warning
 
 // look for it in the filesystem or pack files
-	len = COM_OpenFile (path, &h);
+	len = COM_OpenFile (path, &h, &foundpath);	// 2001-09-12 Returning from which searchpath a file was loaded by Maddes
 	if (h == -1)
 		return NULL;
+
+	bufsize = ((len+1+3)&~3) + sizeof(struct loadedfile_s);	// 2001-09-12 Returning information about loaded file by Maddes
 	
 // extract the filename base name for hunk tag
-	COM_FileBase (path, base);
+// 2001-12-28 Use full filename for hunk allocation by Maddes  start
+//	COM_FileBase (path, base);
+	strncpy(base, COM_SkipPath(path), sizeof(base));
+	base[sizeof(base)-1] = 0;
+// 2001-12-28 Use full filename for hunk allocation by Maddes  end
 	
 	if (usehunk == 1)
-		buf = Hunk_AllocName (len+1, base);
+// 2001-09-12 Returning information about loaded file by Maddes  start
+//		buf = Hunk_AllocName (len+1, base);
+		buf = Hunk_AllocName (bufsize, base);
+// 2001-09-12 Returning information about loaded file by Maddes  end
 	else if (usehunk == 2)
-		buf = Hunk_TempAlloc (len+1);
+// 2001-09-12 Returning information about loaded file by Maddes  start
+//		buf = Hunk_TempAlloc (len+1);
+		buf = Hunk_TempAlloc (bufsize);
+// 2001-09-12 Returning information about loaded file by Maddes  end
 	else if (usehunk == 0)
-		buf = Z_Malloc (len+1);
+// 2001-09-12 Returning information about loaded file by Maddes  start
+//		buf = Z_Malloc (len+1);
+		buf = Z_Malloc (bufsize);
+// 2001-09-12 Returning information about loaded file by Maddes  end
 	else if (usehunk == 3)
-		buf = Cache_Alloc (loadcache, len+1, base);
+// 2001-09-12 Returning information about loaded file by Maddes  start
+//		buf = Cache_Alloc (loadcache, len+1, base);
+		buf = Cache_Alloc (loadcache, bufsize, base);
+// 2001-09-12 Returning information about loaded file by Maddes  end
 	else if (usehunk == 4)
 	{
+// 2001-09-12 Returning information about loaded file by Maddes  start
+/*
 		if (len+1 > loadsize)
 			buf = Hunk_TempAlloc (len+1);
+*/
+		if (bufsize > loadsize)
+			buf = Hunk_TempAlloc (bufsize);
+// 2001-09-12 Returning information about loaded file by Maddes  end
 		else
 			buf = loadbuf;
 	}
@@ -1569,41 +1650,67 @@ byte *COM_LoadFile (char *path, int usehunk)
 		Sys_Error ("COM_LoadFile: not enough space for %s", path);
 		
 	((byte *)buf)[len] = 0;
+// 2001-09-12 Returning information about loaded file by Maddes  start
+	fileinfo = (loadedfile_t *)(buf + ((len+1+3)&~3));
+	fileinfo->data = buf;
+	fileinfo->filelen = len;
+	fileinfo->path = foundpath;	// 2001-09-12 Returning from which searchpath a file was loaded by Maddes
+// 2001-09-12 Returning information about loaded file by Maddes  end
 
 	Draw_BeginDisc ();
 	Sys_FileRead (h, buf, len);                     
 	COM_CloseFile (h);
 	Draw_EndDisc ();
 
-	return buf;
+// 2001-09-12 Returning information about loaded file by Maddes  start
+//	return buf;
+	return fileinfo;
+// 2001-09-12 Returning information about loaded file by Maddes  end
 }
 
-byte *COM_LoadHunkFile (char *path)
+// 2001-09-12 Returning information about loaded file by Maddes  start
+//byte *COM_LoadHunkFile (char *path)
+loadedfile_t *COM_LoadHunkFile (char *path)
+// 2001-09-12 Returning information about loaded file by Maddes  end
 {
 	return COM_LoadFile (path, 1);
 }
 
-byte *COM_LoadTempFile (char *path)
+// 2001-09-12 Returning information about loaded file by Maddes  start
+//byte *COM_LoadTempFile (char *path)
+loadedfile_t *COM_LoadTempFile (char *path)
+// 2001-09-12 Returning information about loaded file by Maddes  end
 {
 	return COM_LoadFile (path, 2);
 }
 
-void COM_LoadCacheFile (char *path, struct cache_user_s *cu)
+// 2001-09-12 Returning information about loaded file by Maddes  start
+//void COM_LoadCacheFile (char *path, struct cache_user_s *cu)
+loadedfile_t *COM_LoadCacheFile (char *path, struct cache_user_s *cu)
+// 2001-09-12 Returning information about loaded file by Maddes  end
 {
 	loadcache = cu;
-	COM_LoadFile (path, 3);
+	return COM_LoadFile (path, 3);	// 2001-09-12 Returning information about loaded file by Maddes
 }
 
 // uses temp hunk if larger than bufsize
-byte *COM_LoadStackFile (char *path, void *buffer, int bufsize)
+// 2001-09-12 Returning information about loaded file by Maddes  start
+//byte *COM_LoadStackFile (char *path, void *buffer, int bufsize)
+loadedfile_t *COM_LoadStackFile (char *path, void *buffer, int bufsize)
+// 2001-09-12 Returning information about loaded file by Maddes  end
 {
-	byte    *buf;
+//	byte	*buf;	// 2001-09-12 Returning information about loaded file by Maddes
 	
 	loadbuf = (byte *)buffer;
 	loadsize = bufsize;
+// 2001-09-12 Returning information about loaded file by Maddes  start
+/*
 	buf = COM_LoadFile (path, 4);
 	
 	return buf;
+*/
+	return COM_LoadFile (path, 4);
+// 2001-09-12 Returning information about loaded file by Maddes  end
 }
 
 /*
@@ -1673,7 +1780,7 @@ pack_t *COM_LoadPackFile (char *packfile)
 	pack->numfiles = numpackfiles;
 	pack->files = newfiles;
 	
-	Con_Printf ("Added packfile %s (%i files)\n", packfile, numpackfiles);
+//	Con_Printf ("Added packfile %s (%i files)\n", packfile, numpackfiles);
 	return pack;
 }
 
@@ -1706,13 +1813,14 @@ void COM_AddGameDirectory (char *dir)
 //
 // add any pak files in the format pak0.pak pak1.pak, ...
 //
-	for (i=0 ; ; i++)
+	for (i=0 ; i<64 ; i++) // Manoel Kasimier - edited
 	{
 		sprintf (pakfile, "%s/pak%i.pak", dir, i);
 		pak = COM_LoadPackFile (pakfile);
 		if (!pak)
-			break;
+			continue;//break; // Manoel Kasimier - edited
 		search = Hunk_Alloc (sizeof(searchpath_t));
+		strcpy (search->filename, dir);	// 2001-09-12 Finding the last searchpath of a directory by Maddes
 		search->pack = pak;
 		search->next = com_searchpaths;
 		com_searchpaths = search;               
@@ -1722,6 +1830,37 @@ void COM_AddGameDirectory (char *dir)
 // add the contents of the parms.txt file to the end of the command line
 //
 
+}
+
+// BlackAura (09/08/2004) - Return the full path to a file
+// Returns 0 if file not found, 1 if file found
+// Path is returned in *path
+int COM_FindFilePath(char *filename, char *path)
+{
+	searchpath_t    *search;
+	int findtime;
+
+	if (!path)
+		Sys_Error ("COM_FindFilePath: path not set");
+
+	// Run through the search path
+	search = com_searchpaths;
+	for ( ; search ; search = search->next)
+	{
+		// We can only operate on files
+		if (!search->pack)
+		{
+			// check a file in the directory tree
+			sprintf (path, "%s/%s",search->filename, filename);
+
+			findtime = Sys_FileTime(path);
+			if (findtime != -1)
+				return 1;
+		}
+	}
+
+	Sys_Printf ("FindFile: can't find %s\n", filename);
+	return 0;
 }
 
 /*
@@ -1791,6 +1930,19 @@ void COM_InitFilesystem (void)
 		com_modified = true;
 		COM_AddGameDirectory (va("%s/%s", basedir, com_argv[i+1]));
 	}
+	// Manoel Kasimier - begin
+	if (!Q_strcasecmp(com_argv[i+1], "rogue"))
+	{
+		rogue = true;
+		standard_quake = false;
+	}
+
+	if (!Q_strcasecmp(com_argv[i+1], "hipnotic"))
+	{
+		hipnotic = true;
+		standard_quake = false;
+	}
+	// Manoel Kasimier - end
 
 //
 // -path <dir or packfile> [<dir or packfile>] ...
@@ -1825,3 +1977,29 @@ void COM_InitFilesystem (void)
 }
 
 
+// 2001-09-12 Finding the last searchpath of a directory  start
+/*
+============
+COM_GetDirSearchPath
+
+Find the last searchpath entry of the same directory of the given searchpath
+============
+*/
+searchpath_t *COM_GetDirSearchPath(searchpath_t *startsearch)
+{
+	searchpath_t *search, *lastsearch;
+
+	lastsearch = startsearch;
+
+	while ( (search = lastsearch->next) )
+	{
+		if (strcmp(search->filename, startsearch->filename))	// different directories, then stop here
+		{
+			break;
+		}
+		lastsearch = search;
+	}
+
+	return lastsearch;
+}
+// 2001-09-12 Finding the last searchpath of a directory  end

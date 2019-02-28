@@ -160,6 +160,7 @@ static void drawtext(int x, int y, char *string)
 {
 	int offset = ((y*640)+x);
 	bfont_draw_str(vram_s + offset, 640, 1, string);
+	printf("%s\n",string);
 }
 
 void Sys_Error (char *error, ...)

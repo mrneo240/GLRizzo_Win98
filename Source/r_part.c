@@ -195,6 +195,7 @@ void R_ClearParticles (void)
 
 void R_ReadPointFile_f (void)
 {
+#ifndef _arch_dreamcast
 	FILE	*f;
 	vec3_t	org;
 	int		r;
@@ -204,7 +205,7 @@ void R_ReadPointFile_f (void)
 	
 	sprintf (name,"maps/%s.pts", sv.name);
 
-	COM_FOpenFile (name, &f);
+	COM_FOpenFile (name, &f, NULL);
 	if (!f)
 	{
 		Con_Printf ("couldn't open %s\n", name);
@@ -239,6 +240,7 @@ void R_ReadPointFile_f (void)
 
 	fclose (f);
 	Con_Printf ("%i points read\n", c);
+#endif
 }
 
 /*

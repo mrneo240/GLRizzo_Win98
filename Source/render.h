@@ -35,6 +35,13 @@ typedef struct efrag_s
 	struct efrag_s		*entnext;
 } efrag_t;
 
+byte *alphamap, *additivemap; // Manoel Kasimier - transparencies
+// Manoel Kasimier - begin
+#if	id386
+byte use_c_renderer;
+#endif
+// Manoel Kasimier - end
+
 
 typedef struct entity_s
 {

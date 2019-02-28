@@ -304,6 +304,7 @@ void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr)
 	//
 	// look for a cached version
 	//
+	/* // Manoel Kasimier - removed - begin
 	strcpy (cache, "glquake/");
 	COM_StripExtension (m->name+strlen("progs/"), cache+strlen("glquake/"));
 	strcat (cache, ".ms2");
@@ -318,17 +319,19 @@ void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr)
 		fclose (f);
 	}
 	else
+	*/ // Manoel Kasimier - removed - end
 	{
 		//
 		// build it from scratch
 		//
-		Con_Printf ("meshing %s...\n",m->name);
+//		Con_Printf ("meshing %s...\n",m->name); // BlackAura - removed
 
 		BuildTris ();		// trifans or lists
 
 		//
 		// save out the cached version
 		//
+	/*	// BlackAura - removed - begin
 		sprintf (fullpath, "%s/%s", com_gamedir, cache);
 		f = fopen (fullpath, "wb");
 		if (f)
@@ -339,6 +342,7 @@ void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr)
 			fwrite (&vertexorder, numorder * sizeof(vertexorder[0]), 1, f);
 			fclose (f);
 		}
+	*/	// BlackAura - removed - end
 	}
 
 
@@ -357,4 +361,3 @@ void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr)
 		for (j=0 ; j<numorder ; j++)
 			*verts++ = poseverts[i][vertexorder[j]];
 }
-
