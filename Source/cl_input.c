@@ -45,7 +45,7 @@ state bit 2 is edge triggered on the down to up transition
 ===============================================================================
 */
 
-
+kbutton_t	in_shift; // Manoel Kasimier - function shift
 kbutton_t	in_mlook, in_klook;
 kbutton_t	in_left, in_right, in_forward, in_back;
 kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;
@@ -355,6 +355,11 @@ void CL_SendMove (usercmd_t *cmd)
     MSG_WriteShort (&buf, cmd->forwardmove);
     MSG_WriteShort (&buf, cmd->sidemove);
     MSG_WriteShort (&buf, cmd->upmove);
+
+	// Manoel Kasimier - function shift - begin
+	shift_function = ( in_shift.state & 3 );
+	in_shift.state &= ~2;
+	// Manoel Kasimier - function shift - end
 
 //
 // send button bits

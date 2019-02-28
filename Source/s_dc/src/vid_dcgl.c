@@ -54,6 +54,8 @@ qboolean is8bit = false;
 
 qboolean isPermedia = false;
 qboolean gl_mtexable = false;
+qboolean scr_skipupdate;
+static qboolean fullsbardraw = false;
 
 #define PACK_RGB565(r, g, b) ((((r) >> 3) << 11) | (((g) >> 2) << 5) | ((b) >> 3))
 
@@ -128,7 +130,11 @@ void GL_BeginRendering(int *x, int *y, int *width, int *height)
 
 void GL_EndRendering(void)
 {
-	glKosSwapBuffers();
+	if (!scr_skipupdate || block_drawing)
+		glKosSwapBuffers();
+
+	if (fullsbardraw)
+		Sbar_Changed();
 }
 
 void VID_ShiftPalette(unsigned char *p)

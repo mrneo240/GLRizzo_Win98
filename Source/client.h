@@ -265,6 +265,7 @@ extern	cvar_t	lookspring;
 extern	cvar_t	lookstrafe;
 extern	cvar_t	sensitivity;
 
+extern	cvar_t	m_look; // Manoel Kasimier - m_look
 extern	cvar_t	m_pitch;
 extern	cvar_t	m_yaw;
 extern	cvar_t	m_forward;
@@ -318,7 +319,7 @@ typedef struct
 	int		state;			// low bit is down state
 } kbutton_t;
 
-extern	kbutton_t	in_mlook, in_klook;
+extern	kbutton_t	in_klook;
 extern 	kbutton_t 	in_strafe;
 extern 	kbutton_t 	in_speed;
 

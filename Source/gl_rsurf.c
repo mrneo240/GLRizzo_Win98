@@ -965,8 +965,10 @@ void R_DrawWaterSurfaces (void)
 	//
 	// go back to the world matrix
 	//
-
+	/*@Todo: get this implemented
     glLoadMatrixf (r_world_matrix);
+	*/
+	R_GenerateModelView();
 
 	if (r_wateralpha.value < 1.0) {
 		glEnable (GL_BLEND);

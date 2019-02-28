@@ -855,6 +855,18 @@ void MYgluPerspective( GLdouble fovy, GLdouble aspect,
    glFrustum( xmin, xmax, ymin, ymax, zNear, zFar );
 }
 
+void R_GenerateModelView(void)
+{
+	glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity ();
+
+    glRotatef (-90,  1, 0, 0);	    // put Z going up
+    glRotatef (90,  0, 0, 1);	    // put Z going up
+    glRotatef (-r_refdef.viewangles[2],  1, 0, 0);
+    glRotatef (-r_refdef.viewangles[0],  0, 1, 0);
+    glRotatef (-r_refdef.viewangles[1],  0, 0, 1);
+    glTranslatef (-r_refdef.vieworg[0],  -r_refdef.vieworg[1],  -r_refdef.vieworg[2]);
+}
 
 /*
 =============
@@ -914,6 +926,9 @@ void R_SetupGL (void)
 	else
 		glCullFace(GL_FRONT);
 
+	/*
+	Moved Matrix generation to a function so it can be emulated for now
+
 	glMatrixMode(GL_MODELVIEW);
     glLoadIdentity ();
 
@@ -923,8 +938,13 @@ void R_SetupGL (void)
     glRotatef (-r_refdef.viewangles[0],  0, 1, 0);
     glRotatef (-r_refdef.viewangles[1],  0, 0, 1);
     glTranslatef (-r_refdef.vieworg[0],  -r_refdef.vieworg[1],  -r_refdef.vieworg[2]);
+	*/
+	R_GenerateModelView();
 
+
+	/*@TODO: See if this can be implemented or faked
 	glGetFloatv (GL_MODELVIEW_MATRIX, r_world_matrix);
+	*/
 
 	//
 	// set drawing parms
@@ -1034,6 +1054,12 @@ R_Mirror
 */
 void R_Mirror (void)
 {
+	/*
+	@Todo: Dont do this
+	*/
+#ifdef _arch_dreamcast
+	return;
+#endif
 	float		d;
 	msurface_t	*s;
 	entity_t	*ent;

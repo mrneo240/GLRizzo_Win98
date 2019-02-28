@@ -39,12 +39,15 @@ keydest_t	key_dest;
 
 int		key_count;			// incremented every key event
 
-char	*keybindings[256];
-qboolean	consolekeys[256];	// if true, can't be rebound while in console
-qboolean	menubound[256];	// if true, can't be rebound while in menu
-int		keyshift[256];		// key to map to if shift held down in console
-int		key_repeats[256];	// if > 1, it is autorepeating
-qboolean	keydown[256];
+char	*keybindings[K_NUMKEYS];
+char	*shiftbindings[K_NUMKEYS];	// Manoel Kasimier - function shift
+qboolean	shift_function;		// Manoel Kasimier - function shift
+qboolean	consolekeys[K_NUMKEYS];	// if true, can't be rebound while in console
+qboolean	menubound[K_NUMKEYS];	// if true, can't be rebound while in menu
+qboolean	key_menurepeats[K_NUMKEYS];			// Manoel Kasimier
+int		keyshift[K_NUMKEYS];		// key to map to if shift held down in console
+int		key_repeats[K_NUMKEYS];	// if > 1, it is autorepeating
+qboolean	keydown[K_NUMKEYS];
 
 typedef struct
 {
@@ -54,6 +57,7 @@ typedef struct
 
 keyname_t keynames[] =
 {
+    // keyboard
 	{"TAB", K_TAB},
 	{"ENTER", K_ENTER},
 	{"ESCAPE", K_ESCAPE},
@@ -67,7 +71,7 @@ keyname_t keynames[] =
 	{"ALT", K_ALT},
 	{"CTRL", K_CTRL},
 	{"SHIFT", K_SHIFT},
-	
+
 	{"F1", K_F1},
 	{"F2", K_F2},
 	{"F3", K_F3},
@@ -88,56 +92,200 @@ keyname_t keynames[] =
 	{"HOME", K_HOME},
 	{"END", K_END},
 
+	{"SEMICOLON", ';'},	// because a raw semicolon seperates commands
+	{"PAUSE", K_PAUSE},
+
+    // mouse
+	{"MOUSEUP", K_MOUSEUP},
+	{"MOUSEDOWN", K_MOUSEDOWN},
+	{"MOUSELEFT", K_MOUSELEFT},
+	{"MOUSERIGHT", K_MOUSERIGHT},
 	{"MOUSE1", K_MOUSE1},
 	{"MOUSE2", K_MOUSE2},
 	{"MOUSE3", K_MOUSE3},
-
-	{"JOY1", K_JOY1},
-	{"JOY2", K_JOY2},
-	{"JOY3", K_JOY3},
-	{"JOY4", K_JOY4},
-
-	{"AUX1", K_AUX1},
-	{"AUX2", K_AUX2},
-	{"AUX3", K_AUX3},
-	{"AUX4", K_AUX4},
-	{"AUX5", K_AUX5},
-	{"AUX6", K_AUX6},
-	{"AUX7", K_AUX7},
-	{"AUX8", K_AUX8},
-	{"AUX9", K_AUX9},
-	{"AUX10", K_AUX10},
-	{"AUX11", K_AUX11},
-	{"AUX12", K_AUX12},
-	{"AUX13", K_AUX13},
-	{"AUX14", K_AUX14},
-	{"AUX15", K_AUX15},
-	{"AUX16", K_AUX16},
-	{"AUX17", K_AUX17},
-	{"AUX18", K_AUX18},
-	{"AUX19", K_AUX19},
-	{"AUX20", K_AUX20},
-	{"AUX21", K_AUX21},
-	{"AUX22", K_AUX22},
-	{"AUX23", K_AUX23},
-	{"AUX24", K_AUX24},
-	{"AUX25", K_AUX25},
-	{"AUX26", K_AUX26},
-	{"AUX27", K_AUX27},
-	{"AUX28", K_AUX28},
-	{"AUX29", K_AUX29},
-	{"AUX30", K_AUX30},
-	{"AUX31", K_AUX31},
-	{"AUX32", K_AUX32},
-
-	{"PAUSE", K_PAUSE},
-
+	{"MOUSE4", K_MOUSE4},
+	{"MOUSE5", K_MOUSE5},
 	{"MWHEELUP", K_MWHEELUP},
 	{"MWHEELDOWN", K_MWHEELDOWN},
 
-	{"SEMICOLON", ';'},	// because a raw semicolon seperates commands
-
-	{NULL,0}
+    // joystick 1
+#ifndef _arch_dreamcast
+	{"JOY1_LEFT",   K_JOY1_AXISX_MINUS},
+	{"JOY1_RIGHT",  K_JOY1_AXISX_PLUS},
+	{"JOY1_UP",     K_JOY1_AXISY_MINUS},
+	{"JOY1_DOWN",   K_JOY1_AXISY_PLUS},
+	{"JOY1_AXISZ-", K_JOY1_AXISZ_MINUS},
+	{"JOY1_AXISZ+", K_JOY1_AXISZ_PLUS},
+	{"JOY1_AXISR-", K_JOY1_AXISR_MINUS},
+	{"JOY1_AXISR+", K_JOY1_AXISR_PLUS},
+	{"JOY1_AXISU-", K_JOY1_AXISU_MINUS},
+	{"JOY1_AXISU+", K_JOY1_AXISU_PLUS},
+	{"JOY1_AXISV-", K_JOY1_AXISV_MINUS},
+	{"JOY1_AXISV+", K_JOY1_AXISV_PLUS},
+	{"JOY1_POV_UP",      K_JOY1_POV_UP},
+	{"JOY1_POV_DOWN",    K_JOY1_POV_DOWN},
+	{"JOY1_POV_LEFT",    K_JOY1_POV_LEFT},
+	{"JOY1_POV_RIGHT",   K_JOY1_POV_RIGHT},
+	{"JOY1_1",  K_JOY1_1},
+	{"JOY1_2",  K_JOY1_2},
+	{"JOY1_3",  K_JOY1_3},
+	{"JOY1_4",  K_JOY1_4},
+	{"JOY1_5",  K_JOY1_5},
+	{"JOY1_6",  K_JOY1_6},
+	{"JOY1_7",  K_JOY1_7},
+	{"JOY1_8",  K_JOY1_8},
+	{"JOY1_9",  K_JOY1_9},
+	{"JOY1_10", K_JOY1_10},
+	{"JOY1_11", K_JOY1_11},
+	{"JOY1_12", K_JOY1_12},
+	{"JOY1_13", K_JOY1_13},
+	{"JOY1_14", K_JOY1_14},
+	{"JOY1_15", K_JOY1_15},
+	{"JOY1_16", K_JOY1_16},
+	{"JOY1_17", K_JOY1_17},
+	{"JOY1_18", K_JOY1_18},
+	{"JOY1_19", K_JOY1_19},
+	{"JOY1_20", K_JOY1_20},
+	{"JOY1_21", K_JOY1_21},
+	{"JOY1_22", K_JOY1_22},
+	{"JOY1_23", K_JOY1_23},
+	{"JOY1_24", K_JOY1_24},
+	{"JOY1_25", K_JOY1_25},
+	{"JOY1_26", K_JOY1_26},
+	{"JOY1_27", K_JOY1_27},
+	{"JOY1_28", K_JOY1_28},
+	{"JOY1_29", K_JOY1_29},
+	{"JOY1_30", K_JOY1_30},
+	{"JOY1_31", K_JOY1_31},
+	{"JOY1_32", K_JOY1_32},
+	// joystick 2
+	{"JOY2_LEFT",   K_JOY2_AXISX_MINUS},
+	{"JOY2_RIGHT",  K_JOY2_AXISX_PLUS},
+	{"JOY2_UP",     K_JOY2_AXISY_MINUS},
+	{"JOY2_DOWN",   K_JOY2_AXISY_PLUS},
+	{"JOY2_AXISZ-", K_JOY2_AXISZ_MINUS},
+	{"JOY2_AXISZ+", K_JOY2_AXISZ_PLUS},
+	{"JOY2_AXISR-", K_JOY2_AXISR_MINUS},
+	{"JOY2_AXISR+", K_JOY2_AXISR_PLUS},
+	{"JOY2_AXISU-", K_JOY2_AXISU_MINUS},
+	{"JOY2_AXISU+", K_JOY2_AXISU_PLUS},
+	{"JOY2_AXISV-", K_JOY2_AXISV_MINUS},
+	{"JOY2_AXISV+", K_JOY2_AXISV_PLUS},
+	{"JOY2_POV_UP",      K_JOY2_POV_UP},
+	{"JOY2_POV_DOWN",    K_JOY2_POV_DOWN},
+	{"JOY2_POV_LEFT",    K_JOY2_POV_LEFT},
+	{"JOY2_POV_RIGHT",   K_JOY2_POV_RIGHT},
+	{"JOY2_1",  K_JOY2_1},
+	{"JOY2_2",  K_JOY2_2},
+	{"JOY2_3",  K_JOY2_3},
+	{"JOY2_4",  K_JOY2_4},
+	{"JOY2_5",  K_JOY2_5},
+	{"JOY2_6",  K_JOY2_6},
+	{"JOY2_7",  K_JOY2_7},
+	{"JOY2_8",  K_JOY2_8},
+	{"JOY2_9",  K_JOY2_9},
+	{"JOY2_10", K_JOY2_10},
+	{"JOY2_11", K_JOY2_11},
+	{"JOY2_12", K_JOY2_12},
+	{"JOY2_13", K_JOY2_13},
+	{"JOY2_14", K_JOY2_14},
+	{"JOY2_15", K_JOY2_15},
+	{"JOY2_16", K_JOY2_16},
+	{"JOY2_17", K_JOY2_17},
+	{"JOY2_18", K_JOY2_18},
+	{"JOY2_19", K_JOY2_19},
+	{"JOY2_20", K_JOY2_20},
+	{"JOY2_21", K_JOY2_21},
+	{"JOY2_22", K_JOY2_22},
+	{"JOY2_23", K_JOY2_23},
+	{"JOY2_24", K_JOY2_24},
+	{"JOY2_25", K_JOY2_25},
+	{"JOY2_26", K_JOY2_26},
+	{"JOY2_27", K_JOY2_27},
+	{"JOY2_28", K_JOY2_28},
+	{"JOY2_29", K_JOY2_29},
+	{"JOY2_30", K_JOY2_30},
+	{"JOY2_31", K_JOY2_31},
+	{"JOY2_32", K_JOY2_32},
+#endif
+#ifdef _arch_dreamcast
+    // Dreamcast controller 1
+	{"JOY1_LEFT",   K_JOY1_DPAD1_LEFT},
+	{"JOY1_RIGHT",  K_JOY1_DPAD1_RIGHT},
+	{"JOY1_UP",     K_JOY1_DPAD1_UP},
+	{"JOY1_DOWN",   K_JOY1_DPAD1_DOWN},
+	{"JOY1_D2_LEFT",	K_JOY1_DPAD2_LEFT},
+	{"JOY1_D2_RIGHT",	K_JOY1_DPAD2_RIGHT},
+	{"JOY1_D2_UP",		K_JOY1_DPAD2_UP},
+	{"JOY1_D2_DOWN",	K_JOY1_DPAD2_DOWN},
+	{"JOY1_AXIS_X-",	K_JOY1_AXISX_MINUS},
+	{"JOY1_AXIS_X+",	K_JOY1_AXISX_PLUS},
+	{"JOY1_AXIS_Y-",	K_JOY1_AXISY_MINUS},
+	{"JOY1_AXIS_Y+",	K_JOY1_AXISY_PLUS},
+	{"JOY1_AXIS_Y2-",	K_JOY1_AXISZ_MINUS},
+	{"JOY1_AXIS_Y2+",	K_JOY1_AXISZ_PLUS},
+	{"JOY1_AXIS_X2-",	K_JOY1_AXISR_MINUS},
+	{"JOY1_AXIS_X2+",	K_JOY1_AXISR_PLUS},
+	{"JOY1_A",		K_JOY1_A},
+	{"JOY1_B",		K_JOY1_B},
+	{"JOY1_C",		K_JOY1_C},
+	{"JOY1_D",		K_JOY1_D},
+	{"JOY1_X",		K_JOY1_X},
+	{"JOY1_Y",		K_JOY1_Y},
+	{"JOY1_Z",		K_JOY1_Z},
+	{"JOY1_START",	K_JOY1_START},
+	{"JOY1_TRIGL",	K_JOY1_TRIGL},
+	{"JOY1_TRIGR",	K_JOY1_TRIGR},
+    // Dreamcast controller 2
+	{"JOY2_LEFT",   K_JOY2_DPAD1_LEFT},
+	{"JOY2_RIGHT",  K_JOY2_DPAD1_RIGHT},
+	{"JOY2_UP",     K_JOY2_DPAD1_UP},
+	{"JOY2_DOWN",   K_JOY2_DPAD1_DOWN},
+	{"JOY2_D2_LEFT",	K_JOY2_DPAD2_LEFT},
+	{"JOY2_D2_RIGHT",	K_JOY2_DPAD2_RIGHT},
+	{"JOY2_D2_UP",		K_JOY2_DPAD2_UP},
+	{"JOY2_D2_DOWN",	K_JOY2_DPAD2_DOWN},
+	{"JOY2_AXIS_X-",	K_JOY2_AXISX_MINUS},
+	{"JOY2_AXIS_X+",	K_JOY2_AXISX_PLUS},
+	{"JOY2_AXIS_Y-",	K_JOY2_AXISY_MINUS},
+	{"JOY2_AXIS_Y+",	K_JOY2_AXISY_PLUS},
+	{"JOY2_AXIS_Y2-",	K_JOY2_AXISZ_MINUS},
+	{"JOY2_AXIS_Y2+",	K_JOY2_AXISZ_PLUS},
+	{"JOY2_AXIS_X2-",	K_JOY2_AXISR_MINUS},
+	{"JOY2_AXIS_X2+",	K_JOY2_AXISR_PLUS},
+	{"JOY2_A",		K_JOY2_A},
+	{"JOY2_B",		K_JOY2_B},
+	{"JOY2_C",		K_JOY2_C},
+	{"JOY2_D",		K_JOY2_D},
+	{"JOY2_X",		K_JOY2_X},
+	{"JOY2_Y",		K_JOY2_Y},
+	{"JOY2_Z",		K_JOY2_Z},
+	{"JOY2_START",	K_JOY2_START},
+	{"JOY2_TRIGL",	K_JOY2_TRIGL},
+	{"JOY2_TRIGR",	K_JOY2_TRIGR},
+	// QuakeDC compatibility
+	{"DC_DUP",		K_JOY1_DPAD1_UP},
+	{"DC_DDOWN",	K_JOY1_DPAD1_DOWN},
+	{"DC_DLEFT",	K_JOY1_DPAD1_LEFT},
+	{"DC_DRIGHT",	K_JOY1_DPAD1_RIGHT},
+	{"DC_A",        K_JOY1_A},
+	{"DC_B",        K_JOY1_B},
+	{"DC_X",        K_JOY1_X},
+	{"DC_Y",        K_JOY1_Y},
+	{"DC_TRIGL",	K_JOY1_TRIGL},
+	{"DC_TRIGR",	K_JOY1_TRIGR},
+	// PC compatibility
+	{"JOY1_AXIS_Z-",	K_JOY1_AXISZ_MINUS},
+	{"JOY1_AXIS_Z+",	K_JOY1_AXISZ_PLUS},
+	{"JOY1_AXIS_R-",	K_JOY1_AXISR_MINUS},
+	{"JOY1_AXIS_R+",	K_JOY1_AXISR_PLUS},
+	{"JOY2_AXIS_Z-",	K_JOY2_AXISZ_MINUS},
+	{"JOY2_AXIS_Z+",	K_JOY2_AXISZ_PLUS},
+	{"JOY2_AXIS_R-",	K_JOY2_AXISR_MINUS},
+	{"JOY2_AXIS_R+",	K_JOY2_AXISR_PLUS},
+#endif
+	// Manoel Kasimier - end
+	{NULL,0} // end of list - don't remove
 };
 
 /*
@@ -385,6 +533,102 @@ char *Key_KeynumToString (int keynum)
 	return "<UNKNOWN KEYNUM>";
 }
 
+//=============================================================================
+// Manoel Kasimier - function shift - begin
+//=============================================================================
+// These are modified versions of the binding functions
+void Key_SetShiftBinding (int keynum, char *binding)
+{
+	char	*new;
+	int		l;
+
+	if (keynum == -1)
+		return;
+
+// free old bindings
+	if (shiftbindings[keynum])
+	{
+		Z_Free (shiftbindings[keynum]);
+		shiftbindings[keynum] = NULL;
+	}
+
+// allocate memory for new binding
+	l = Q_strlen (binding);
+	if (!l) return; // Manoel Kasimier - true unbinding
+	new = Z_Malloc (l+1);
+	Q_strcpy (new, binding);
+	new[l] = 0;
+	shiftbindings[keynum] = new;
+}
+void Key_UnbindShift_f (void)
+{
+	int		b;
+
+	if (Cmd_Argc() != 2)
+	{
+		Con_Printf ("unbindshift <key> : remove commands from a shifted key\n");
+		return;
+	}
+
+	b = Key_StringToKeynum (Cmd_Argv(1));
+	if (b==-1)
+	{
+		Con_Printf ("\"%s\" isn't a valid key\n", Cmd_Argv(1));
+		return;
+	}
+
+	Key_SetShiftBinding (b, "");
+}
+void Key_UnbindallShifts_f (void)
+{
+	int		i;
+	for (i=0 ; i<K_NUMKEYS ; i++)
+		if (shiftbindings[i])
+			Key_SetShiftBinding (i, "");
+}
+void Key_BindShift_f (void)
+{
+	int			i, c, b;
+	char		cmd[1024];
+
+	c = Cmd_Argc();
+
+	if (c == 1)
+	{
+		Con_Printf ("bindshift <key> [command] : attach a command to a shifted key\n");
+		return;
+	}
+	b = Key_StringToKeynum (Cmd_Argv(1));
+	if (b==-1)
+	{
+		Con_Printf ("\"%s\" isn't a valid key\n", Cmd_Argv(1));
+		return;
+	}
+
+	if (c == 2)
+	{
+		if (shiftbindings[b])
+			Con_Printf ("\"%s\" = \"%s\"\n", Cmd_Argv(1), shiftbindings[b] );
+		else
+			Con_Printf ("\"%s\" is not bound\n", Cmd_Argv(1) );
+		return;
+	}
+
+// copy the rest of the command line
+	cmd[0] = 0;		// start out with a null string
+	for (i=2 ; i< c ; i++)
+	{
+		if (i > 2)
+			strcat (cmd, " ");
+		strcat (cmd, Cmd_Argv(i));
+	}
+
+	Key_SetShiftBinding (b, cmd);
+}
+//=============================================================================
+// Manoel Kasimier - function shift - end
+//=============================================================================
+
 
 /*
 ===================
@@ -588,6 +832,67 @@ void Key_Init (void)
 
 }
 
+// Manoel Kasimier - begin
+int In_AnalogCommand(int key)
+{
+	if (shift_function)
+	{
+		if (!shiftbindings[key]) // if it's pointing to 0000-0000
+			return AXIS_NONE;
+		// angles
+		if (!Q_strcmp(shiftbindings[key], "+lookup"))
+			return AXIS_TURN_U;
+		if (!Q_strcmp(shiftbindings[key], "+lookdown"))
+			return AXIS_TURN_D;
+		if (!Q_strcmp(shiftbindings[key], "+left"))
+			return AXIS_TURN_L;
+		if (!Q_strcmp(shiftbindings[key], "+right"))
+			return AXIS_TURN_R;
+		// movement
+		if (!Q_strcmp(shiftbindings[key], "+forward"))
+			return AXIS_MOVE_F;
+		if (!Q_strcmp(shiftbindings[key], "+back"))
+			return AXIS_MOVE_B;
+		if (!Q_strcmp(shiftbindings[key], "+moveup"))
+			return AXIS_MOVE_U;
+		if (!Q_strcmp(shiftbindings[key], "+movedown"))
+			return AXIS_MOVE_D;
+		if (!Q_strcmp(shiftbindings[key], "+moveleft"))
+			return AXIS_MOVE_L;
+		if (!Q_strcmp(shiftbindings[key], "+moveright"))
+			return AXIS_MOVE_R;
+	}
+	else
+	{
+		if (!keybindings[key]) // if it's pointing to 0000-0000
+			return AXIS_NONE;
+		// angles
+		if (!Q_strcmp(keybindings[key], "+lookup"))
+			return AXIS_TURN_U;
+		if (!Q_strcmp(keybindings[key], "+lookdown"))
+			return AXIS_TURN_D;
+		if (!Q_strcmp(keybindings[key], "+left"))
+			return AXIS_TURN_L;
+		if (!Q_strcmp(keybindings[key], "+right"))
+			return AXIS_TURN_R;
+		// movement
+		if (!Q_strcmp(keybindings[key], "+forward"))
+			return AXIS_MOVE_F;
+		if (!Q_strcmp(keybindings[key], "+back"))
+			return AXIS_MOVE_B;
+		if (!Q_strcmp(keybindings[key], "+moveup"))
+			return AXIS_MOVE_U;
+		if (!Q_strcmp(keybindings[key], "+movedown"))
+			return AXIS_MOVE_D;
+		if (!Q_strcmp(keybindings[key], "+moveleft"))
+			return AXIS_MOVE_L;
+		if (!Q_strcmp(keybindings[key], "+moveright"))
+			return AXIS_MOVE_R;
+	}
+	return AXIS_NONE;
+}
+// Manoel Kasimier - end
+
 /*
 ===================
 Key_Event
@@ -617,13 +922,17 @@ void Key_Event (int key, qboolean down)
 	if (down)
 	{
 		key_repeats[key]++;
-		if (key != K_BACKSPACE && key != K_PAUSE && key_repeats[key] > 1)
+		if (key_repeats[key] > 1) // Manoel Kasimier - edited
+		if (!(key_dest == key_menu && key_menurepeats[key])) // Manoel Kasimier
+		if (!(key_dest == key_console && consolekeys[key])) // Manoel Kasimier
 		{
 			return;	// ignore most autorepeats
 		}
-			
+
+		/*	
 		if (key >= 200 && !keybindings[key])
 			Con_Printf ("%s is unbound, hit F4 to set.\n", Key_KeynumToString (key) );
+		*/
 	}
 
 	if (key == K_SHIFT)

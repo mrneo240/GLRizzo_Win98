@@ -41,6 +41,8 @@ cvar_t	m_yaw = {"m_yaw","0.022", true};
 cvar_t	m_forward = {"m_forward","1", true};
 cvar_t	m_side = {"m_side","0.8", true};
 
+cvar_t	m_look = {"m_look","1", true}; // Manoel Kasimier - m_look
+
 
 client_static_t	cls;
 client_state_t	cl;
@@ -741,6 +743,8 @@ void CL_Init (void)
 	Cvar_RegisterVariable (&lookspring);
 	Cvar_RegisterVariable (&lookstrafe);
 	Cvar_RegisterVariable (&sensitivity);
+
+	Cvar_RegisterVariable (&m_look); // Manoel Kasimier - m_look
 
 	Cvar_RegisterVariable (&m_pitch);
 	Cvar_RegisterVariable (&m_yaw);
