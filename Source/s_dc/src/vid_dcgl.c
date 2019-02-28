@@ -59,7 +59,7 @@ static qboolean fullsbardraw = false;
 
 #define PACK_RGB565(r, g, b) ((((r) >> 3) << 11) | (((g) >> 2) << 5) | ((b) >> 3))
 
-int basewidth, baseheight, screenheight, kos_vidmode, dcvidmode = 5;
+int basewidth, baseheight, screenheight, dcvidmode = 5;
 
 int scr_width, scr_height;
 
@@ -225,7 +225,6 @@ void VID_Init8bitPalette(void)
 
 void SelectVidMode()
 {
-	kos_vidmode = DM_640x480;
 	basewidth = 640;
 	baseheight = 480;
 	screenheight = 480;

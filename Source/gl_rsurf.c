@@ -34,7 +34,7 @@ int		lightmap_textures;
 
 unsigned		blocklights[18*18];
 
-#define	BLOCK_WIDTH		128
+#define	BLOCK_WIDTH	128
 #define	BLOCK_HEIGHT	128
 
 #define	MAX_LIGHTMAPS	64
@@ -52,7 +52,7 @@ int			allocated[MAX_LIGHTMAPS][BLOCK_WIDTH];
 
 // the lightmap texture data needs to be kept in
 // main memory so texsubimage can update properly
-byte		lightmaps[4*MAX_LIGHTMAPS*BLOCK_WIDTH*BLOCK_HEIGHT];
+byte		lightmaps[1*MAX_LIGHTMAPS*BLOCK_WIDTH*BLOCK_HEIGHT]; // BlackAura - edited
 
 // For gl_texsort 0
 msurface_t  *skychain = NULL;
@@ -276,31 +276,6 @@ extern	float	speedscale;		// for top sky and bottom sky
 void DrawGLWaterPoly (glpoly_t *p);
 void DrawGLWaterPolyLightmap (glpoly_t *p);
 
-lpMTexFUNC qglMTexCoord2fSGIS = NULL;
-lpSelTexFUNC qglSelectTextureSGIS = NULL;
-
-qboolean mtexenabled = false;
-
-void GL_SelectTexture (GLenum target);
-
-void GL_DisableMultitexture(void) 
-{
-	if (mtexenabled) {
-		glDisable(GL_TEXTURE_2D);
-		GL_SelectTexture(TEXTURE0_SGIS);
-		mtexenabled = false;
-	}
-}
-
-void GL_EnableMultitexture(void) 
-{
-	if (gl_mtexable) {
-		GL_SelectTexture(TEXTURE1_SGIS);
-		glEnable(GL_TEXTURE_2D);
-		mtexenabled = true;
-	}
-}
-
 #if 0
 /*
 ================
@@ -498,7 +473,6 @@ void R_DrawSequentialPoly (msurface_t *s)
 
 	if (s->flags & SURF_DRAWTURB)
 	{
-		GL_DisableMultitexture();
 		GL_Bind (s->texinfo->texture->gl_texturenum);
 		EmitWaterPolys (s);
 		return;
@@ -509,7 +483,6 @@ void R_DrawSequentialPoly (msurface_t *s)
 	//
 	if (s->flags & SURF_DRAWSKY)
 	{
-		GL_DisableMultitexture();
 		GL_Bind (solidskytexture);
 		speedscale = realtime*8;
 		speedscale -= (int)speedscale & ~127;
@@ -585,6 +558,7 @@ void R_DrawSequentialPoly (msurface_t *s)
 #endif
 
 
+#undef GL_WATER_WARP // BlackAura
 /*
 ================
 DrawGLWaterPoly
@@ -599,9 +573,8 @@ void DrawGLWaterPoly (glpoly_t *p)
 	float	s, t, os, ot;
 	vec3_t	nv;
 
-	GL_DisableMultitexture();
-
-	glBegin (GL_TRIANGLE_FAN);
+#ifdef GL_WATER_WARP // BlackAura
+	glBegin (GL_POLYGON); // BlackAura - edited
 	v = p->verts[0];
 	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
 	{
@@ -614,6 +587,18 @@ void DrawGLWaterPoly (glpoly_t *p)
 		glVertex3fv (nv);
 	}
 	glEnd ();
+// BlackAura - begin
+#else
+	glBegin (GL_POLYGON);
+	v = p->verts[0];
+	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
+	{
+		glTexCoord2f (v[3], v[4]);
+		glVertex3fv (v);
+	}
+	glEnd ();
+#endif
+// BlackAura - end
 }
 
 void DrawGLWaterPolyLightmap (glpoly_t *p)
@@ -623,9 +608,8 @@ void DrawGLWaterPolyLightmap (glpoly_t *p)
 	float	s, t, os, ot;
 	vec3_t	nv;
 
-	GL_DisableMultitexture();
-
-	glBegin (GL_TRIANGLE_FAN);
+#ifdef GL_WATER_WARP // BlackAura
+	glBegin (GL_POLYGON); // BlackAura - edited
 	v = p->verts[0];
 	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
 	{
@@ -638,8 +622,19 @@ void DrawGLWaterPolyLightmap (glpoly_t *p)
 		glVertex3fv (nv);
 	}
 	glEnd ();
+// BlackAura - begin
+#else
+	glBegin (GL_POLYGON);
+	v = p->verts[0];
+	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
+	{
+		glTexCoord2f (v[5], v[6]);
+		glVertex3fv (v);
+	}
+	glEnd ();
+#endif
+// BlackAura - end
 }
-
 /*
 ================
 DrawGLPoly
@@ -1034,7 +1029,6 @@ void DrawTextureChains (void)
 	texture_t	*t;
 
 	if (!gl_texsort.value) {
-		GL_DisableMultitexture();
 
 		if (skychain) {
 			R_DrawSkyChain(skychain);

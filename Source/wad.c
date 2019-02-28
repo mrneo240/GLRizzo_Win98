@@ -71,10 +71,18 @@ void W_LoadWadFile (char *filename)
 	wadinfo_t		*header;
 	unsigned		i;
 	int				infotableofs;
+	loadedfile_t	*fileinfo;	// 2001-09-12 Returning information about loaded file by Maddes
 	
+// 2001-09-12 Returning information about loaded file by Maddes  start
+/*
 	wad_base = COM_LoadHunkFile (filename);
 	if (!wad_base)
+*/
+	fileinfo = COM_LoadHunkFile (filename);
+	if (!fileinfo)
+// 2001-09-12 Returning information about loaded file by Maddes  end
 		Sys_Error ("W_LoadWadFile: couldn't load %s", filename);
+	wad_base = fileinfo->data;	// 2001-09-12 Returning information about loaded file by Maddes
 
 	header = (wadinfo_t *)wad_base;
 	

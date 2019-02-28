@@ -65,10 +65,9 @@ typedef struct
 	qboolean	mipmap;
 } gltexture_t;
 
-#define	MAX_GLTEXTURES	1024
+#define	MAX_GLTEXTURES	512	//1024 BlackAura
 gltexture_t	gltextures[MAX_GLTEXTURES];
 int			numgltextures;
-
 
 void GL_Bind (int texnum)
 {
@@ -101,7 +100,7 @@ void GL_Bind (int texnum)
 #define	BLOCK_HEIGHT	256
 
 int			scrap_allocated[MAX_SCRAPS][BLOCK_WIDTH];
-byte		scrap_texels[MAX_SCRAPS][BLOCK_WIDTH*BLOCK_HEIGHT*4];
+byte		scrap_texels[MAX_SCRAPS][BLOCK_WIDTH*BLOCK_HEIGHT/* *4 */]; // BlackAura - edited
 qboolean	scrap_dirty;
 int			scrap_texnum;
 
@@ -1290,7 +1289,7 @@ void GL_SelectTexture (GLenum target)
 {
 	if (!gl_mtexable)
 		return;
-	qglSelectTextureSGIS(target);
+
 	if (target == oldtarget) 
 		return;
 	cnttextures[oldtarget-TEXTURE0_SGIS] = currenttexture;

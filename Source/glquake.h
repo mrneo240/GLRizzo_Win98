@@ -240,12 +240,4 @@ void GL_Bind (int texnum);
 #define APIENTRY /* */
 #endif
 
-typedef void (APIENTRY *lpMTexFUNC) (GLenum, GLfloat, GLfloat);
-typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
-extern lpMTexFUNC qglMTexCoord2fSGIS;
-extern lpSelTexFUNC qglSelectTextureSGIS;
-
 extern qboolean gl_mtexable;
-
-void GL_DisableMultitexture(void);
-void GL_EnableMultitexture(void);

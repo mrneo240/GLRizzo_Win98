@@ -19,16 +19,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // quakedef.h -- primary header for client
 
+#define TRACE_ENABLED 1
+#define TRACE() if(TRACE_ENABLED) {fprintf(stderr, "%s\n", __func__);}
+
+// quakedef.h -- primary header for client
+
 //#define	GLTEST			// experimental stuff
 
 #define	QUAKE_GAME			// as opposed to utilities
 
 #define	VERSION				1.09
 #define	GLQUAKE_VERSION		1.00
-#define	D3DQUAKE_VERSION	0.01
-#define	WINQUAKE_VERSION	0.996
-#define	LINUX_VERSION		1.30
-#define	X11_VERSION			1.10
 
 //define	PARANOID			// speed sapping error checking
 
@@ -44,6 +45,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <stdlib.h>
 #include <setjmp.h>
+
+#ifndef _arch_dreamcast // BlackAura
 
 #if defined(_WIN32) && !defined(WINDED)
 
@@ -61,18 +64,26 @@ void	VID_UnlockBuffer (void);
 
 #endif
 
+//* // Manoel Kasimier - no 386 assembler, no MASM
 #if defined __i386__ // && !defined __sun__
 #define id386	1
 #else
 #define id386	0
 #endif
+/*/// Manoel Kasimier - no 386 assembler, no MASM
+#define id386	0 //*/// Manoel Kasimier - no 386 assembler, no MASM
 
 #if id386
 #define UNALIGNED_OK	1	// set to 0 if unaligned accesses are not supported
 #else
 #define UNALIGNED_OK	0
 #endif
-
+#else // BlackAura - begin
+#define	VID_LockBuffer()
+#define	VID_UnlockBuffer()
+#define id386	0
+#define UNALIGNED_OK	0
+#endif // BlackAura - end
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
 #define CACHE_SIZE	32		// used to align key data structures
 
@@ -334,6 +345,7 @@ void Chase_Init (void);
 void Chase_Reset (void);
 void Chase_Update (void);
 
+dfunction_t *ED_FindFunction (char *name);	// FrikaC - qcexec function
 // 2001-10-20 TIMESCALE extension by Tomaz/Maddes  start
 extern	double	host_cpu_frametime;
 extern	double	host_org_frametime;

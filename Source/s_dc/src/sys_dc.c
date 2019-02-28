@@ -183,7 +183,7 @@ void Sys_Error (char *error, ...)
 	drawtext(32, 96, strbuffer);
 
 	/* Hang - infinite loop */
-	while(1);
+	//while(1);
 
 	exit (1);
 }
@@ -274,7 +274,7 @@ static void assert_hnd(const char * file, int line, const char * expr, const cha
 	drawtext(32, 160, strbuffer);
 
 	/* Hang - infinite loop */
-	while(1);
+	//while(1);
 }
 
 #include <assert.h>
@@ -283,41 +283,84 @@ static int this_argc = 1;
 static char *this_argv[] = {"quake"};
 
 // BlackAura (24-12-2002) - Modlist interface
-/*extern int	modmenu_argc;
+extern int	modmenu_argc;
 extern char	*modmenu_argv[MAX_NUM_ARGVS]; // Manoel Kasimier - edited
-extern void ModMenu(const char *basedir);*/
+extern void ModMenu(const char *basedir);
 
-int mem_size = 10*1024*1024; // Manoel Kasimier
+int mem_size = 6*1024*1024; // Manoel Kasimier
+KOS_INIT_FLAGS(INIT_MALLOCSTATS);
+
+static unsigned long systemRam = 0x00000000;
+static unsigned long elfOffset = 0x00000000;
+static unsigned long stackSize = 0x00000000;
+
+extern unsigned long end;
+extern unsigned long start;
+
+#define _end end
+#define _start start
+
+void set_system_ram()
+{
+   systemRam = 0x8d000000 - 0x8c000000;
+   elfOffset = 0x8c000000;
+
+   stackSize = (int)&_end - (int)&_start + ((int)&_start - elfOffset);
+}
+
+unsigned long get_system_ram()
+{
+   return systemRam;
+}
+
+
+unsigned long get_free_ram()
+{
+    struct mallinfo mi = mallinfo();
+    return systemRam - (mi.usmblks + stackSize);
+}
+
+void print_ram_stats()
+{
+	float sys_ram, free_ram, used_ram;
+	sys_ram = (float)get_system_ram() / (float)(1024*1024);
+	free_ram = (float)get_free_ram() / (float)(1024*1024);
+	used_ram = (sys_ram - free_ram);
+	
+	printf("\n---------\nRAM stats (MB):\nTotal: %.2f, Free: %.2f, Used: %.2f\n---------\n", sys_ram, free_ram, used_ram);
+}
 
 int main ()
 {
+	set_system_ram();
 	static quakeparms_t    parms;
 	double time, oldtime, newtime;
-
+	// BlackAura (08-12-2002) - Allocate heap
+	parms.memsize = mem_size; // Manoel Kasimier - edited
+	parms.membase = malloc(parms.memsize);
+	print_ram_stats();
+	
 	// BlackAura (24-12-2002) - Jump to the ModMenu
-	//ModMenu(dc_basedir);
+	ModMenu(dc_basedir);
 
 	// Set up assertion handler
 	assert_set_handler(assert_hnd);
 
-	// BlackAura (08-12-2002) - Allocate heap
-	vid_clear(0, 0, 0);
-	parms.memsize = mem_size; // Manoel Kasimier - edited
-	parms.membase = malloc(parms.memsize);
-	vid_clear(0, 0, 0);
+	print_ram_stats();
 
 	// BlackAura (08-12-2002) - Set base directory
 	parms.basedir = dc_basedir;
-
+	print_ram_stats();
 	// BlackAura (24-12-2002) - Initialise arguments from modlist
-	//COM_InitArgv (modmenu_argc, modmenu_argv);
-	COM_InitArgv (this_argc, this_argv);
+	COM_InitArgv (modmenu_argc, modmenu_argv);
+	//COM_InitArgv (this_argc, this_argv);
 	parms.argc = com_argc;
 	parms.argv = com_argv;
 
 	// BlackAura (08-12-2002) - Init the host
 	printf ("Host_Init\n");
 	Host_Init (&parms);
+	print_ram_stats();
 
 	// BlackAura (08-12-2002) - Keep running frames
 	oldtime = Sys_FloatTime() - 0.1;
@@ -335,6 +378,7 @@ int main ()
 
 		// BlackAura (08-12-2002) - Run a frame
 		Host_Frame(time);
+		print_ram_stats();
 
 		Vibration_Update (); // Manoel Kasimier
 

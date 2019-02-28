@@ -12,18 +12,20 @@ MOUNT_DIR=.
 BUILD_DEBUG_DIR=debug$(ARCH)
 BUILD_RELEASE_DIR=release$(ARCH)
 
-CC=kos-cc
-
-BASE_CFLAGS=-I.
-RELEASE_CFLAGS=$(BASE_CFLAGS) -g -ffast-math -funroll-loops \
-	-fomit-frame-pointer -fexpensive-optimizations
-DEBUG_CFLAGS=$(BASE_CFLAGS) -g
-
-LIBS= -lGLdc -lz
 GLCFLAGS=-DGLQUAKE
 
-DO_GL_CC=$(CC) $(CFLAGS) $(KOS_CFLAGS) $(KOS_LOCAL_CFLAGS) $(OPT_FLAGS) $(GLCFLAGS) -o $@ -c $<
-DO_GL_DEBUG_CC=$(CC) $(DEBUG_CFLAGS) $(KOS_CFLAGS) $(KOS_LOCAL_CFLAGS) $(OPT_FLAGS) $(GLCFLAGS) -o $@ -c $<
+BASE_CFLAGS=-I. $(GLCFLAGS)
+RELEASE_CFLAGS=$(BASE_CFLAGS) -O2 -s
+#-ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations
+DEBUG_CFLAGS=$(BASE_CFLAGS) -g -DDEBUG
+
+LIBS= -lGLdc -lz
+
+KOS_CFLAGS2=-fomit-frame-pointer -ml -m4-single-only -ffunction-sections -fdata-sections -I/opt/toolchains/dc/kos/include -I/opt/toolchains/dc/kos/kernel/arch/dreamcast/include -I/opt/toolchains/dc/kos/addons/include -I/opt/toolchains/dc/kos/../kos-ports/include -D_arch_dreamcast -D_arch_sub_pristine -fno-builtin -fno-stack-protector -fno-strict-aliasing
+
+
+DO_GL_CC=$(KOS_CC) $(CFLAGS) $(KOS_CFLAGS2) $(KOS_LOCAL_CFLAGS) $(OPT_FLAGS)  -o $@ -c $<
+DO_GL_DEBUG_CC=$(KOS_CC) $(DEBUG_CFLAGS) $(KOS_CFLAGS2) $(KOS_LOCAL_CFLAGS) $(OPT_FLAGS) -o $@ -c $<
 
 #############################################################################
 # SETUP AND BUILD
@@ -112,10 +114,11 @@ GLDC_OBJS=$(BUILDDIR)/glquake/vid_dcgl.o \
 			$(BUILDDIR)/glquake/sys_dc.o \
 			$(BUILDDIR)/glquake/net_dc.o \
 			$(BUILDDIR)/glquake/dc_vibe.o \
-			$(BUILDDIR)/glquake/in_dc.o 
+			$(BUILDDIR)/glquake/in_dc.o \
+			$(BUILDDIR)/glquake/dc_menu.o 
 
 $(BUILDDIR)/bin/glquake : $(GLQUAKE_OBJS) $(GLDC_OBJS)
-	$(CC) $(CFLAGS) $(KOS_CFLAGS) $(KOS_LDFLAGS) -o $@ $(KOS_START) \
+	$(KOS_CC) -Xlinker -Map=MAP_bin1.map $(CFLAGS) $(KOS_CFLAGS2) $(KOS_LDFLAGS) -o $@ $(KOS_START) \
 	 $(GLQUAKE_OBJS) $(GLDC_OBJS) $(OBJEXTRA) -L$(KOS_BASE)/lib $(LIBS) -lm $(KOS_LIBS)
 	sh-elf-objcopy -R .stack -O binary $(BUILDDIR)/bin/glquake $(BUILDDIR)/bin/glquake.bin
 	$(KOS_BASE)/utils/scramble/scramble $(BUILDDIR)/bin/glquake.bin $(BUILDDIR)/bin/1st_read.bin
@@ -142,6 +145,9 @@ $(BUILDDIR)/glquake/snd_null.o :  $(MOUNT_DIR)/snd_null.c
 	$(DO_GL_CC)
 
 $(BUILDDIR)/glquake/in_dc.o :  $(MOUNT_DIR)/s_dc/src/in_dc.c
+	$(DO_GL_CC)
+
+$(BUILDDIR)/glquake/dc_menu.o :  $(MOUNT_DIR)/s_dc/src/dc_menu.c
 	$(DO_GL_CC)
 ###
 # End
